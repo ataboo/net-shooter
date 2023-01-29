@@ -9,41 +9,40 @@ public class RemotePlayer : Node2D
     [Export]
     public NodePath playerSpritePath;
     private Sprite playerSprite;
-    [Export]
-    public NodePath netStatePath;
-    private NetPulledState netState;
 
     private Vector2? targetPosition;
+
+    private float targetRotation;
+
+    private string vesselId;
+
+    private string playerId;
 
     public override void _Ready()
     {
         playerName = GetNode<Label>(playerNamePath);
         playerSprite = GetNode<Sprite>(playerSpritePath);
-        netState = GetNode<NetPulledState>(netStatePath);
-
-        netState.Connect(nameof(NetPulledState.OnStateChange), this, nameof(HandleStateChange));
     }
 
-    public void InitPlayer(string name, int id) {
-        playerName.Text = name;
+    public void InitPlayer(string id) {
+        this.vesselId = id;
     }
 
     public override void _Process(float delta)
     {
         if(targetPosition.HasValue) {
-            var deltaPos = targetPosition.Value - Position;
-            if(deltaPos.Length() < 0.001) {
-                Position = targetPosition.Value;
-
-            } else {
-                Position = Position.LinearInterpolate(targetPosition.Value, 10f * delta);
-                playerSprite.Rotation = Mathf.Atan2(deltaPos.y, deltaPos.x) + Mathf.Pi / 2f;
-            }
+            Position = Position.LinearInterpolate(targetPosition.Value, 10f * delta);
+            playerSprite.Rotation = Mathf.LerpAngle(playerSprite.Rotation, targetRotation, 10f * delta);
         }
     }
 
-    public void HandleStateChange(WSResponse response) {
-        var payload = response.ParsePayload<PlayerUpdatePayload>();
-        targetPosition = payload.pos.ToVector();
+    public void VesselUpdate(VesselUpdatePayload update) {
+        targetPosition = new Vector2((float)update.tran.pos.x, (float)update.tran.pos.y);
+        targetRotation = (float)update.tran.hdg;
+    }
+
+    public void CharacterUpdate(CharacterPayload character) {
+        playerName.Text = character.name;
+        playerId = character.id;
     }
 }

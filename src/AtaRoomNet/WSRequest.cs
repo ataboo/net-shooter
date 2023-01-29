@@ -8,12 +8,9 @@ namespace AtaRoomNet
     [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
     public class WSRequest
     {
-        public RequestType type;
-        public int sender;
         public string id;
         public long send;
-        public long relay;
-        public string name;
+        public string type;
         public string payload;
 
         public void MarshalPayload<TPayload>(TPayload payloadObj) where TPayload : class {

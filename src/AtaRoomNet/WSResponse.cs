@@ -8,29 +8,23 @@ namespace AtaRoomNet
     [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
     public class WSResponse : Godot.Reference
     {
-        public ResponseType type;
+        public string type;
 
-        public int sender;
+        public string recipient;
 
         public string id;
 
         public long send;
-
-        public long relay;
-
-        public string name;
 
         public string payload;
 
         public override string ToString() {
             var builder = new StringBuilder();
             builder.AppendLine("==============WSResponse============");
-            builder.AppendLine("Type:    " + System.Enum.GetName(typeof(ResponseType), type));
+            builder.AppendLine($"Type:        {type}");
             builder.AppendLine($"ID:          {id}");
-            builder.AppendLine($"Sender:      {sender}");
-            builder.AppendLine($"Name:        {name}");
+            builder.AppendLine($"Recipient:   {recipient}");
             builder.AppendLine($"Sent:        {send}");
-            builder.AppendLine($"Relayed:     {relay}");
             builder.AppendLine($"Raw Payload: {payload}");
             builder.AppendLine("====================================");
 

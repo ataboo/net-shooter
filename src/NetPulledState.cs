@@ -23,7 +23,7 @@ public class NetPulledState: Node {
     }
 
     public void HandleResponse(WSResponse response) {
-        if(response.type != ResponseType.GameEvtRes || response.name != eventName) {
+        if(response.type != eventName) {
             return;
         }
 

@@ -1,19 +1,15 @@
 namespace AtaRoomNet {
-    public enum RequestType
-    {
-        GameEvtReq = 0,
-        LeaveReq = 1,
-        LockReq = 2,
-        UnlockReq = 3,
-    }
-    public enum ResponseType
-    {
-        GameEvtRes = 0,
-        JoinReject = 1,
-        YouJoinRes = 2,
-        PlayerJoinRes = 3,
-        LeaveRes = 4,
-        LockRes = 5,
-        UnlockRes = 6
+    public struct EngineEvtType {
+        public const string InSteerUpdate = "steer";
+        public const string InPlayerJoin = "player";
+        public const string InPlayerLeave = "leave";
+        public const string InBoardVessel = "board";
+
+        public const string OutPlayerReject = "reject";
+        public const string OutVesselUpdate = "vessel";
+        public const string OutCrewUpdate = "crew";
+        public const string OutVesselRemove = "rm-vessel";
+        public const string OutPlayerJoined = "joined";
+        public const string OutCharUpdate = "chars";
     }
 }

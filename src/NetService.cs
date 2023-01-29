@@ -8,26 +8,23 @@ using Newtonsoft.Json;
 public class NetService: Node {
     private WebSocketClient ws;
 
-    private static HashSet<ResponseType> responsesWithPlayers = new HashSet<ResponseType>{
-        ResponseType.YouJoinRes,
-        ResponseType.LeaveRes,
-        ResponseType.PlayerJoinRes
-    };
+    // private static HashSet<ResponseType> responsesWithPlayers = new HashSet<ResponseType>{
+    //     ResponseType.YouJoinRes,
+    //     ResponseType.LeaveRes,
+    //     ResponseType.PlayerJoinRes
+    // };
 
     public string url;
     public string playerName;
     public string roomCode;
     public string gameID;
 
-    public Dictionary<int, string> PlayerNames {get; private set;}
-    public int PlayerID {get; private set;} = -1;
+    public string PlayerID {get; private set;} = null;
 
     public bool Joined { get; private set; } = false;
 
     [Signal]
     public delegate void OnJoined();
-    [Signal]
-    public delegate void OnPlayerChange();
     [Signal]
     public delegate void OnResponse(WSResponse response);
     [Signal]
@@ -74,15 +71,14 @@ public class NetService: Node {
         return SendMessage(request);
     }
 
-    public Error SendGameEvent<TPayload>(string name, TPayload payload) where TPayload : class {
+    public Error SendGameEvent<TPayload>(string type, TPayload payload) where TPayload : class {
         if(!Joined) {
             return Error.Unavailable;
         }
 
         var req = new WSRequest {
-            type = RequestType.GameEvtReq,
+            type = type,
             id = new Godot.Object().GetInstanceId().ToString(),
-            name = name,
             send = System.DateTimeOffset.Now.ToUnixTimeMilliseconds(),
         };
 
@@ -102,13 +98,18 @@ public class NetService: Node {
 
     private void HandleConnected(string protocol) {
         GD.Print("Connected");
+
         SendMessage(new WSJoinRequest{
-            create = true,
-            game_id = gameID,
-            player_name = playerName,
-            room_code = roomCode,
-            room_size = 12
+            username = playerName,
+            token = "abc-123",
         });
+        // SendMessage(new WSJoinRequest{
+        //     create = true,
+        //     game_id = gameID,
+        //     player_name = playerName,
+        //     room_code = roomCode,
+        //     room_size = 12
+        // });
     }
 
     private void HandleConnectionEnded(bool wasCleanClose) {
@@ -127,17 +128,14 @@ public class NetService: Node {
             return;
         }
 
-        if(responsesWithPlayers.Contains(res.type)) {
-            var playerPayload = res.ParsePayload<PlayerPayload>();
-            PlayerNames = playerPayload.players.ToDictionary(p => p.id, p => p.name);
-
-            if(res.type == ResponseType.YouJoinRes) {
-                PlayerID = playerPayload.subject;
+        if(!Joined) {
+            if(res.type == EngineEvtType.OutPlayerJoined) {
                 EmitSignal(nameof(OnJoined));
                 Joined = true;
-            }
+                PlayerID = res.recipient;
 
-            EmitSignal(nameof(OnPlayerChange));
+                return;
+            }
         }
 
         EmitSignal(nameof(OnResponse), res);
@@ -163,10 +161,10 @@ public class NetService: Node {
         }
     }
 
-    private (WSResponse response, TPayload payload) ReadMessage<TPayload>() where TPayload : class {
-        var response = ReadMessage();
-        var payload = response.ParsePayload<TPayload>();
+    // private (WSResponse response, TPayload payload) ReadMessage<TPayload>() where TPayload : class {
+    //     var response = ReadMessage();
+    //     var payload = response.ParsePayload<TPayload>();
 
-        return (response, payload);
-    }
+    //     return (response, payload);
+    // }
 }
