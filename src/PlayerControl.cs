@@ -1,64 +1,55 @@
 using Godot;
+using AtaRoomNet;
 
 public class PlayerControl : Node2D
 {
-	[Export]
-	public float speed = 10f;
+	[Signal]
+    public delegate void OnSteeringChange();
 
-	[Export]
-	public NodePath netStatePath;
-	private NetPushedState netState;
-	[Export]
-    public NodePath playerNamePath;
-    private Label playerName;
-    [Export]
-    public NodePath playerSpritePath;
-    private Sprite playerSprite;
+	public SteeringPayload Steering {get; private set;} = new SteeringPayload();
 
 	private NetService netService;
 
 	public override void _Ready()
 	{
-		netState = GetNode<NetPushedState>(netStatePath);
-		playerName = GetNode<Label>(playerNamePath);
-		playerSprite = GetNode<Sprite>(playerSpritePath);
 		netService = GetNode<NetService>("/root/NetService");
+	}
 
-		playerName.Text = netService.playerName;
+	public void SetSteering(SteeringPayload steering) {
+		this.Steering = new SteeringPayload {
+			config = steering.config,
+			steering = steering.steering,
+			throttle = steering.throttle
+		};
 	}
 
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
 	public override void _Process(float delta)
 	{
 		var movement = Vector2.Zero;
-		if(Input.IsActionPressed("move_down")) {
-			movement.y += 1;
+		var changed = false;
+		if(Input.IsActionJustPressed("move_left")) {
+			this.Steering.steering -= 1;
+			changed = true;
 		}
-		if(Input.IsActionPressed("move_up")) {
-			movement.y -= 1;
+		if(Input.IsActionJustPressed("move_right")) {
+			this.Steering.steering += 1;
+			changed = true;
 		}
-		if(Input.IsActionPressed("move_left")) {
-			movement.x -= 1;
+		if(Input.IsActionJustPressed("move_up")) {
+			this.Steering.throttle += 1;
+			changed = true;
 		}
-		if(Input.IsActionPressed("move_right")) {
-			movement.x += 1;
-		}
-
-		movement = movement.Normalized();
-		var lastPos = Position;
-		Position += movement * speed * delta;
-
-		if(movement.LengthSquared() > 0) {
-			playerSprite.Rotation = Mathf.Atan2(movement.y, movement.x) + Mathf.Pi / 2f;
+		if(Input.IsActionJustPressed("move_down")) {
+			this.Steering.throttle -= 1;
+			changed = true;
 		}
 
-		if(lastPos != Position) {
-			var payload = new PlayerUpdatePayload {
-				pos = PayloadVector.FromVector(Position)
-			};
-			netState.SetPayload(payload);
+		if(changed) {
+			this.Steering.throttle = Mathf.Clamp(this.Steering.throttle, -2, 4);
+			this.Steering.steering = Mathf.Clamp(this.Steering.steering, -4, 4);
 
-			GD.Print($"x: {payload.pos.x}, y: {payload.pos.y}");
+			EmitSignal(nameof(OnSteeringChange));
 		}
 	}
 }

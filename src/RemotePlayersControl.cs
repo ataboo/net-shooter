@@ -6,7 +6,12 @@ using Godot;
 public class RemotePlayersControl : Node2D
 {
     [Export]
-    PackedScene remotePlayerPrefab;
+    PackedScene vesselPrefab;
+
+    [Export]
+    NodePath playerControlPath;
+    PlayerControl playerControl;
+
 
     private NetService netService;
 
@@ -17,13 +22,15 @@ public class RemotePlayersControl : Node2D
     public override void _Ready()
     {
         netService = GetNode<NetService>("/root/NetService");
+        playerControl = GetNode<PlayerControl>(playerControlPath);
 
         vessels = new Dictionary<string, RemotePlayer>();
 
         netService.Connect(nameof(NetService.OnResponse), this, nameof(HandleWsResponse));
+        playerControl.Connect(nameof(PlayerControl.OnSteeringChange), this, nameof(HandleSteeringChange));
     }
 
-    public void HandleWsResponse(WSResponse res) {
+    void HandleWsResponse(WSResponse res) {
         switch(res.type) {
             case EngineEvtType.OutVesselUpdate:
                 var payload = res.ParsePayload<VesselUpdatePayload>();
@@ -68,9 +75,13 @@ public class RemotePlayersControl : Node2D
     }
 
 
+    void HandleSteeringChange() {
+        netService.SendGameEvent(EngineEvtType.InSteerUpdate, playerControl.Steering);
+    }
+
 
     RemotePlayer InstantiateVessel(VesselUpdatePayload vesselData) {
-        var newPlayer = remotePlayerPrefab.Instance<RemotePlayer>();
+        var newPlayer = vesselPrefab.Instance<RemotePlayer>();
         AddChild(newPlayer);
         newPlayer.InitPlayer(vesselData.id);
 
@@ -88,9 +99,6 @@ public class RemotePlayersControl : Node2D
                 vessels[c.vessel].CharacterUpdate(c);
             } else {
                 GD.Print($"Failed to match {c.id} to {c.vessel}");
-                foreach(var v in vessels) {
-                    GD.Print($"{v.Key}");
-                }
             }
         }
     }
