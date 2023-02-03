@@ -29,25 +29,25 @@ public class PlayerControl : Node2D
 		var movement = Vector2.Zero;
 		var changed = false;
 		if(Input.IsActionJustPressed("move_left")) {
-			this.Steering.steering -= 1;
+			this.Steering.steering -= .25f;
 			changed = true;
 		}
 		if(Input.IsActionJustPressed("move_right")) {
-			this.Steering.steering += 1;
+			this.Steering.steering += .25f;
 			changed = true;
 		}
 		if(Input.IsActionJustPressed("move_up")) {
-			this.Steering.throttle += 1;
+			this.Steering.throttle += .25f;
 			changed = true;
 		}
 		if(Input.IsActionJustPressed("move_down")) {
-			this.Steering.throttle -= 1;
+			this.Steering.throttle -= .25f;
 			changed = true;
 		}
 
 		if(changed) {
-			this.Steering.throttle = Mathf.Clamp(this.Steering.throttle, -2, 4);
-			this.Steering.steering = Mathf.Clamp(this.Steering.steering, -4, 4);
+			this.Steering.throttle = Mathf.Clamp(this.Steering.throttle, -1, 1);
+			this.Steering.steering = Mathf.Clamp(this.Steering.steering, -1, 1);
 
 			EmitSignal(nameof(OnSteeringChange));
 		}

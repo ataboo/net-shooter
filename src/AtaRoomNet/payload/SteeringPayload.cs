@@ -4,9 +4,9 @@ namespace AtaRoomNet {
 
     [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
     public class SteeringPayload {
-        public int throttle;
+        public float throttle;
 
-        public int steering;
+        public float steering;
 
         public int config;
     }

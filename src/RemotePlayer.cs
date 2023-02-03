@@ -37,7 +37,7 @@ public class RemotePlayer : Node2D
     }
 
     public void VesselUpdate(VesselUpdatePayload update) {
-        targetPosition = new Vector2((float)update.tran.pos.x, (float)update.tran.pos.y);
+        targetPosition = new Vector2((float)update.tran.pos.x + 400, -(float)update.tran.pos.y + 300);
         targetRotation = (float)update.tran.hdg;
     }
 
