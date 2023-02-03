@@ -8,12 +8,6 @@ using Newtonsoft.Json;
 public class NetService: Node {
     private WebSocketClient ws;
 
-    // private static HashSet<ResponseType> responsesWithPlayers = new HashSet<ResponseType>{
-    //     ResponseType.YouJoinRes,
-    //     ResponseType.LeaveRes,
-    //     ResponseType.PlayerJoinRes
-    // };
-
     public string url;
     public string playerName;
     public string roomCode;
