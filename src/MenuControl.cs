@@ -14,10 +14,7 @@ public class MenuControl : Control
 	private TextEdit serverInput;
 	[Export]
 	public NodePath nameInputPath;
-	public TextEdit nameInput;
-	[Export]
-	public NodePath roomInputPath;
-	private TextEdit roomInput;
+	public LineEdit nameInput;
 
 	private NetService netService;
 
@@ -32,10 +29,10 @@ public class MenuControl : Control
 		joinButton = GetNode<Button>(joinButtonPath);
 		// pingIcon = GetNode<Image>(pingIconPath);
 		serverInput = GetNode<TextEdit>(serverInputPath);
-		nameInput = GetNode<TextEdit>(nameInputPath);
-		roomInput = GetNode<TextEdit>(roomInputPath);
+		nameInput = GetNode<LineEdit>(nameInputPath);
 
 		joinButton.Connect("pressed", this, nameof(HandleJoinClick));
+		nameInput.Connect("gui_input", this, nameof(HandleNameInput));
 
 		netService.Connect(nameof(NetService.OnJoined), this, nameof(HandleJoined));
 		netService.Connect(nameof(NetService.OnDisconnect), this, nameof(HandleDisconnect));
@@ -45,7 +42,6 @@ public class MenuControl : Control
 	public void HandleJoinClick() {
 		netService.url = serverInput.Text;
 		netService.playerName = nameInput.Text;
-		netService.roomCode = roomInput.Text;
 		netService.gameID = "Net Shooter";
 		
 		netService.ConnectWS();
@@ -54,11 +50,21 @@ public class MenuControl : Control
 	}
 
 	void HandleJoined() {
+		netService.QueueIncoming(true);
 		GetTree().ChangeScene("res://Scenes/MapScene.tscn");
 	}
 
 	void HandleDisconnect() {
 		joinButton.Disabled = false;
+	}
+
+	void HandleNameInput(InputEvent evt) {
+		if(evt is InputEventKey keyEvt) {
+			GD.Print(keyEvt.Scancode, keyEvt.Pressed);
+			if(keyEvt.Pressed && keyEvt.Scancode == (int)KeyList.Enter || keyEvt.Scancode == (int)KeyList.KpEnter) {
+				this.HandleJoinClick();
+			}
+		}
 	}
 
 	void HandleResponse(WSResponse response) {

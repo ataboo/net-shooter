@@ -1,5 +1,4 @@
 using Godot;
-using System;
 
 public class MapSceneControl : Node2D
 {
@@ -11,11 +10,11 @@ public class MapSceneControl : Node2D
 
         netService.Connect(nameof(NetService.OnDisconnect), this, nameof(HandleNetDisconnect));
 
-        
+        netService.QueueIncoming(false);
     }
 
     private void HandleNetDisconnect() {
-		GetTree().ChangeScene("res://Scenes/MenuScene.tscn");
+		  GetTree().ChangeScene("res://Scenes/MenuScene.tscn");
     }
 
 //  // Called every frame. 'delta' is the elapsed time since the previous frame.

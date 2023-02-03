@@ -10,7 +10,15 @@ public class RemotePlayersControl : Node2D
 
     [Export]
     NodePath playerControlPath;
-    PlayerControl playerControl;
+    private PlayerControl _playerControl;
+
+    [Export]
+    NodePath mapSpritePath;
+    private Sprite _mapSprite;
+
+    [Export]
+    NodePath cameraControlPath;
+    private CameraControl _cameraControl;
 
 
     private NetService netService;
@@ -22,12 +30,14 @@ public class RemotePlayersControl : Node2D
     public override void _Ready()
     {
         netService = GetNode<NetService>("/root/NetService");
-        playerControl = GetNode<PlayerControl>(playerControlPath);
+        _playerControl = GetNode<PlayerControl>(playerControlPath);
+        _mapSprite = GetNode<Sprite>(mapSpritePath);
 
         vessels = new Dictionary<string, RemotePlayer>();
 
         netService.Connect(nameof(NetService.OnResponse), this, nameof(HandleWsResponse));
-        playerControl.Connect(nameof(PlayerControl.OnSteeringChange), this, nameof(HandleSteeringChange));
+        _playerControl.Connect(nameof(PlayerControl.OnSteeringChange), this, nameof(HandleSteeringChange));
+		_cameraControl = GetNode<CameraControl>(cameraControlPath);
     }
 
     void HandleWsResponse(WSResponse res) {
@@ -53,7 +63,12 @@ public class RemotePlayersControl : Node2D
                 MatchCharactersToVessels();
                 
                 break;
+            case EngineEvtType.OutWorldUpdate:
+                var world = res.ParsePayload<WorldPayload>();
+                this.SetWorldTexture(world);
+                break;
             default:
+                GD.Print("Event not supported: " + res.type);
                 break;
         }
         
@@ -74,9 +89,50 @@ public class RemotePlayersControl : Node2D
         // }
     }
 
+    private void SetWorldTexture(WorldPayload worldPayload) {
+        var imgBytes =  Marshalls.Base64ToRaw(worldPayload.image);
+        var img = new Image();
+        img.LoadPngFromBuffer(imgBytes);
+        img.Convert(Image.Format.Rgb8);
+        img.Lock();
+        for(var x=0; x<img.GetWidth(); x++) {
+            for(var y=0; y<img.GetHeight(); y++) {
+                img.SetPixel(x, y, ColourWorldPixel(img.GetPixel(x, y)));
+            }
+        }
+        img.Unlock();
+
+        var imgText = new ImageTexture();
+        imgText.CreateFromImage(img, 3);
+        _mapSprite.Scale = new Vector2(2, 2);
+        _mapSprite.Texture = imgText;
+    }
+
+    private Color ColourWorldPixel(Color color) {
+        var deep = 0.55f;
+        var surface = 0.75f;
+        
+        if(color.r < deep) {
+            color.r = 0f;
+            color.g = 0.15f;
+            color.b = 0.2f;
+        } else if(color.r < surface) {
+            var t = 1f - (color.r - deep) / (surface - deep);
+            color.r = Mathf.Lerp(0.05f, 0f, t);
+            color.g = Mathf.Lerp(0.4f, 0.15f, t);
+            color.b = Mathf.Lerp(0.4f, 0.2f, t);
+        } else {
+            color.r -= .2f;
+            color.g -= .2f;
+            color.b -= .4f;
+        }
+        
+        return color;
+    }
+
 
     void HandleSteeringChange() {
-        netService.SendGameEvent(EngineEvtType.InSteerUpdate, playerControl.Steering);
+        netService.SendGameEvent(EngineEvtType.InSteerUpdate, _playerControl.Steering);
     }
 
 
@@ -97,6 +153,9 @@ public class RemotePlayersControl : Node2D
             if(!string.IsNullOrEmpty(c.vessel) && vessels.ContainsKey(c.vessel)) {
                 GD.Print($"Matched {c.id} to {c.vessel}");
                 vessels[c.vessel].CharacterUpdate(c);
+                if(c.id == netService.PlayerID) {
+                    _cameraControl.FocusTarget = vessels[c.vessel];
+                }
             } else {
                 GD.Print($"Failed to match {c.id} to {c.vessel}");
             }

@@ -1,12 +1,20 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=6 format=2]
 
 [ext_resource path="res://Scenes/Prefabs/Vessel.tscn" type="PackedScene" id=1]
 [ext_resource path="res://src/PlayerControl.cs" type="Script" id=2]
 [ext_resource path="res://src/MapSceneControl.cs" type="Script" id=3]
 [ext_resource path="res://src/RemotePlayersControl.cs" type="Script" id=4]
+[ext_resource path="res://src/CameraControl.cs" type="Script" id=5]
 
 [node name="MapScene" type="Node2D"]
 script = ExtResource( 3 )
+
+[node name="Camera2D" type="Camera2D" parent="."]
+current = true
+script = ExtResource( 5 )
+
+[node name="PlayerControl" type="Node2D" parent="."]
+script = ExtResource( 2 )
 
 [node name="Units" type="Node2D" parent="."]
 
@@ -14,6 +22,8 @@ script = ExtResource( 3 )
 script = ExtResource( 4 )
 vesselPrefab = ExtResource( 1 )
 playerControlPath = NodePath("../../PlayerControl")
+mapSpritePath = NodePath("../../Sprite")
+cameraControlPath = NodePath("../../Camera2D")
 
-[node name="PlayerControl" type="Node2D" parent="."]
-script = ExtResource( 2 )
+[node name="Sprite" type="Sprite" parent="."]
+z_index = -2

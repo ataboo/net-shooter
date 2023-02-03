@@ -17,6 +17,9 @@ public class NetService: Node {
 
     public bool Joined { get; private set; } = false;
 
+    private bool _queueIncoming = false;
+    private Queue<WSResponse> _msgQueue = new Queue<WSResponse>();
+
     [Signal]
     public delegate void OnJoined();
     [Signal]
@@ -35,8 +38,12 @@ public class NetService: Node {
             return Error.AlreadyInUse;
         }
 
+        var maxBufferSize = 1000;
+        var maxPackets = 1000;
+
         ws = new WebSocketClient();
         ws.VerifySsl = false;
+        ws.SetBuffers(maxBufferSize, maxPackets, maxBufferSize, maxPackets);
         ws.Connect("connection_established", this, nameof(HandleConnected));
         ws.Connect("connection_error", this, nameof(HandleConnectionError));
         ws.Connect("connection_closed", this, nameof(HandleConnectionEnded));
@@ -116,9 +123,24 @@ public class NetService: Node {
         WSDisconnect(false);
     }
 
+    public void QueueIncoming(bool active) {
+        _queueIncoming = active;
+
+        if(!_queueIncoming) {
+            while(_msgQueue.Count > 0) {
+                EmitSignal(nameof(OnResponse), _msgQueue.Dequeue());
+            }
+        }
+    }
+
     private void HandleDataReceived() {
         var res = ReadMessage();
         if(res == null) {
+            return;
+        }
+
+        if(_queueIncoming) {
+            _msgQueue.Enqueue(res);
             return;
         }
 

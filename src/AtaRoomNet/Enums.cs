@@ -11,5 +11,6 @@ namespace AtaRoomNet {
         public const string OutVesselRemove = "rm-vessel";
         public const string OutPlayerJoined = "joined";
         public const string OutCharUpdate = "chars";
+        public const string OutWorldUpdate = "world";
     }
 }
